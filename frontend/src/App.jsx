@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { ajaxRequest } from './utils/ajax';
 import Toast from './components/Toast';
 import CodeBlock from './components/CodeBlock';
-import { JAVA_SOURCE_CODE } from './constants/sourceCode';
-import { AlignLeft, Code, Database, Globe, Play, Server, Plus, Trash2, Clock, Settings, Zap } from 'lucide-react';
+import LostItemQuery from './components/LostItemQuery';
+import { JAVA_SOURCE_CODE, LOST_ITEM_SERVLET_CODE } from './constants/sourceCode';
+import { AlignLeft, Code, Database, Globe, Play, Server, Plus, Trash2, Clock, Settings, Zap, PackageSearch, FlaskConical } from 'lucide-react';
 
 function App() {
+    const [view, setView] = useState('playground'); // playground | lostfound
     const [loading, setLoading] = useState(false);
     const [responseContext, setResponseContext] = useState(null); // { data, status, headers }
     const [activeTab, setActiveTab] = useState('response'); // response, frontend, backend
+    const [backendFile, setBackendFile] = useState('data'); // data | lostitem
 
     // Request Configuration
     const [method, setMethod] = useState('POST');
@@ -179,12 +182,31 @@ fetch(url, options)
             {/* Header */}
             <header className="flex items-center gap-3 pb-4 border-b border-slate-800 mb-4 px-2">
                 <Server className="text-blue-500 w-8 h-8" />
-                <div>
+                <div className="flex-1">
                     <h1 className="text-xl font-bold text-white tracking-tight">Ajax & Servlet 异步通信演练场</h1>
                     <p className="text-xs text-slate-400">交互式 HTTP 请求构建与代码可视化工具</p>
                 </div>
+
+                {/* 视图切换：演练场 / 失物查询 */}
+                <div className="flex bg-slate-900 rounded-lg border border-slate-800 p-1 gap-1">
+                    <button
+                        onClick={() => setView('playground')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${view === 'playground' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        <FlaskConical className="w-3.5 h-3.5" /> 演练场
+                    </button>
+                    <button
+                        onClick={() => setView('lostfound')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all ${view === 'lostfound' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        <PackageSearch className="w-3.5 h-3.5" /> 失物查询
+                    </button>
+                </div>
             </header>
 
+            {view === 'lostfound' ? (
+                <LostItemQuery />
+            ) : (
             <main className="flex flex-1 gap-6 overflow-hidden">
 
                 {/* Left Panel: Request Builder */}
@@ -422,13 +444,32 @@ fetch(url, options)
                         {/* Tab: Backend Code */}
                         {activeTab === 'backend' && (
                             <div className="h-full p-4">
+                                {/* Servlet 源码切换 */}
+                                <div className="flex gap-2 mb-3">
+                                    <button
+                                        onClick={() => setBackendFile('data')}
+                                        className={`px-3 py-1 rounded text-xs font-mono border transition ${backendFile === 'data' ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'}`}
+                                    >
+                                        DataServlet.java
+                                    </button>
+                                    <button
+                                        onClick={() => setBackendFile('lostitem')}
+                                        className={`px-3 py-1 rounded text-xs font-mono border transition ${backendFile === 'lostitem' ? 'bg-red-900/30 text-red-300 border-red-800' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'}`}
+                                    >
+                                        LostItemServlet.java
+                                    </button>
+                                </div>
                                 <CodeBlock
-                                    title="DataServlet.java"
+                                    title={backendFile === 'data' ? 'DataServlet.java' : 'LostItemServlet.java'}
                                     language="JAVA"
-                                    code={JAVA_SOURCE_CODE}
+                                    code={backendFile === 'data' ? JAVA_SOURCE_CODE : LOST_ITEM_SERVLET_CODE}
                                 />
                                 <div className="mt-4 p-3 bg-red-900/20 border border-red-900/50 rounded text-sm text-red-200">
-                                    <strong>核心概念：</strong> 该 Servlet 处理 POST 请求，使用 <code>Gson</code> 解析 JSON，并模拟业务处理后返回 JSON。
+                                    {backendFile === 'data' ? (
+                                        <><strong>核心概念：</strong> 该 Servlet 处理 POST 请求，使用 <code>Gson</code> 解析 JSON，并模拟业务处理后返回 JSON。</>
+                                    ) : (
+                                        <><strong>核心概念：</strong> 失物查询接口，支持 <code>?delay=毫秒数</code> 参数模拟慢响应（上限 30s），用于联调前端超时处理；<code>?keyword=server_error</code> 可模拟 500 异常。</>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -436,6 +477,7 @@ fetch(url, options)
                 </section>
 
             </main>
+            )}
         </div>
     );
 }
